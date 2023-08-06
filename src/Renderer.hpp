@@ -17,8 +17,10 @@ public:
     void begin();
     void end();
     void capture(std::mutex& lock, std::vector<u8>& data, volatile bool& lul);
+#ifdef GEODE_IS_MACOS
     CGImageRef CGImageFromCCImage(const void* data, int newDataLen);
     bool CGImageWriteToFile(CGImageRef image);
+#endif
 };
 
 struct Recorder {

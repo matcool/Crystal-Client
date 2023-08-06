@@ -35,11 +35,7 @@
 #include <thread>
 #include <chrono>
 #include <numbers>
-#include <dirent.h>
 #include "HitboxNode.hpp"
-#include <CoreGraphics/CoreGraphics.h>
-#include <ImageIO/ImageIO.h>
-#include <CoreServices/CoreServices.h>
 #include "Amethyst.hpp"
 #include <Geode/fmod/fmod.hpp>
 #include <stdio.h>
@@ -50,6 +46,13 @@
 #include "Shortcuts.hpp"
 #include "CrystalClient.hpp"
 #include "Icon.hpp"
+
+#ifdef GEODE_IS_MACOS
+#include <dirent.h>
+#include <CoreGraphics/CoreGraphics.h>
+#include <ImageIO/ImageIO.h>
+#include <CoreServices/CoreServices.h>
+#endif
 
 using namespace Shortcuts;
 using namespace Variables;

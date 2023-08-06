@@ -38,13 +38,13 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/GLEW/glew32.lib)
+    target_link_libraries(${PROJECT_NAME} opengl32)
 elseif(APPLE)
     target_link_libraries(${PROJECT_NAME} "-framework OpenGL -framework Cocoa")
+    target_link_libraries(${PROJECT_NAME} libfmod.dylib)
 elseif(ANDROID)
     target_link_libraries(${PROJECT_NAME} GLESv2)
 endif()
 
 target_link_libraries(${PROJECT_NAME} geode-sdk)
-target_link_libraries(${PROJECT_NAME} libfmod.dylib)
 create_geode_file(${PROJECT_NAME})

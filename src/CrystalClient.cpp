@@ -39,7 +39,7 @@ void CrystalClient::setup() {
     
     auto ctx = ImGui::CreateContext();
         
-    this->setupFonts((Mod::get()->getResourcesDir() / "Lexend.ttf").c_str(), 14.0f);
+    this->setupFonts((Mod::get()->getResourcesDir() / "Lexend.ttf").string().c_str(), 14.0f);
     this->setupPlatform();
 }
 
@@ -51,16 +51,16 @@ void CrystalClient::show(bool visible) {
 void CrystalClient::toggle() {
 	auto platform = reinterpret_cast<PlatformToolbox*>(AppDelegate::get());
     if (!m_visible) {
-		ImGui::LoadIniSettingsFromDisk((Mod::get()->getSaveDir() / "imgui.ini").c_str());
-		platform->showCursor();
+		ImGui::LoadIniSettingsFromDisk((Mod::get()->getSaveDir() / "imgui.ini").string().c_str());
+		// platform->showCursor();
 	}
     if (m_visible) {
-		ImGui::SaveIniSettingsToDisk((Mod::get()->getSaveDir() / "imgui.ini").c_str());
+		ImGui::SaveIniSettingsToDisk((Mod::get()->getSaveDir() / "imgui.ini").string().c_str());
 		Crystal::saveMods(Crystal::profile);
 		initPatches();
 		//if (!Crystal::profile.speedhack) Crystal::profile.speed = 1;
 		//CCDirector::sharedDirector()->getScheduler()->setTimeScale(Crystal::profile.speed);
-        if (PlayLayer::get() && !PlayLayer::get()->m_isPaused && !PlayLayer::get()->m_hasLevelCompleteMenu) platform->hideCursor();
+        // if (PlayLayer::get() && !PlayLayer::get()->m_isPaused && !PlayLayer::get()->m_hasLevelCompleteMenu) platform->hideCursor();
     }
     this->show(!m_visible);
 }
@@ -236,20 +236,10 @@ cocos2d::enumKeyCodes CrystalClient::shortcutKey(int key) {
 	}
 }
 
-float CrystalClient::getTimeForXPos(PlayLayer* play) {
-    float ret;
-    float xPos = play->m_player1->getPositionX();
-    __asm movss xmm1, xPos;
-    reinterpret_cast<void(__thiscall*)>(geode::base::get() + 0x293eb0); // PlayLayer::timeForXPos2
-    __asm movss ret, xmm0; // return value
-
-    return ret;
-}
-
 std::string CrystalClient::getRenderPath(bool full) {
 	std::string songPath;
 	if (full) {
-		songPath = (std::string)geode::dirs::getTempDir();
+		songPath = geode::dirs::getTempDir().string();
 		songPath.erase(songPath.length() - 10);
 		songPath = songPath + "Crystal/temp/";
 	} else {
@@ -283,6 +273,7 @@ void CrystalClient::addTransparentBG(CCNode* layer) {
 }
 
 void CrystalClient::initPatches() {
+#ifdef GEODE_IS_MACOS
 	// scale hack
 	scaleHack1 = Mod::get()->patch(reinterpret_cast<void*>(base::get() + 0x18D811), {'\xeb'});
 	scaleHack2 = Mod::get()->patch(reinterpret_cast<void*>(base::get() + 0x18D7D9), {'\xeb'});
@@ -297,6 +288,7 @@ void CrystalClient::initPatches() {
 	customObjLimit1 = Mod::get()->patch(reinterpret_cast<void*>(base::get() + 0x1d67c), {'\xe9', '\x98', '\x00', '\x00', '\x00', '\x90'});
 	customObjLimit2 = Mod::get()->patch(reinterpret_cast<void*>(base::get() + 0x1d869), {'\x90', '\x90', '\x90', '\x90', '\x90', '\x90'});
 	customObjLimit3 = Mod::get()->patch(reinterpret_cast<void*>(base::get() + 0x1d72d), {'\xe9', '\xa7', '\x00', '\x00', '\x00', '\x90'});
+#endif
 }
 
 void CrystalClient::refreshPatches() {

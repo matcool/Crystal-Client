@@ -18,6 +18,7 @@ std::string getOffsetTime(float time) {
 }
 
 void Recorder::start(const std::string& path, const std::string& temp) {
+#ifdef GEODE_IS_MACOS
     m_recording = true;
     m_frame_has_data = false;
     init_quality();
@@ -95,6 +96,7 @@ void Recorder::start(const std::string& path, const std::string& temp) {
         ghc::filesystem::remove(temp);
         log::info("deleted temp");
     }).detach();
+#endif
 }
 
 void Recorder::stop() {
@@ -180,6 +182,7 @@ void Recorder::handle_recording(PlayLayer* play_layer, float dt) {
     }
 }
 
+#ifdef GEODE_IS_MACOS
 CGImageRef MyRenderTexture::CGImageFromCCImage(const void* data, int newDataLen) {
     float width = Crystal::profile.targetWidth;
     float height = Crystal::profile.targetHeight;
@@ -233,6 +236,8 @@ bool MyRenderTexture::CGImageWriteToFile(CGImageRef image) {
     CFRelease(destination);
     return true;
 }
+
+#endif
 
 void Recorder::init_quality() {
     if (currentPreset == 0) {

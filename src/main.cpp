@@ -402,7 +402,7 @@ void CrystalClient::drawGUI() {
     //ImGui::Combo("Macro Type", &currentMacroType, macroTypes, IM_ARRAYSIZE(macroTypes));
     ImGui::InputTextWithHint("Macro Name", "Macro Name", profile.macroname, IM_ARRAYSIZE(profile.macroname));
     if (ImGui::Button("Save Macro")) {
-		std::string filename = (std::string)geode::Mod::get()->getConfigDir() + "/Amethyst/Macros/" + (std::string)profile.macroname + ".thyst";
+		std::string filename = geode::Mod::get()->getConfigDir().string() + "/Amethyst/Macros/" + (std::string)profile.macroname + ".thyst";
 		std::fstream myfile(filename.c_str(), std::ios::app);
 		myfile << P1pushes.size();
 		myfile << "\n";
@@ -435,7 +435,7 @@ void CrystalClient::drawGUI() {
 	}
 	ImGui::SameLine();
     if (ImGui::Button("Load Macro")) {
-		std::string filename = (std::string)geode::Mod::get()->getConfigDir() + "/Amethyst/Macros/" + (std::string)profile.macroname + ".thyst";
+		std::string filename = geode::Mod::get()->getConfigDir().string() + "/Amethyst/Macros/" + (std::string)profile.macroname + ".thyst";
         std::string line;
 		std::fstream file;
 		file.open(filename, std::ios::in);
@@ -488,7 +488,7 @@ void CrystalClient::drawGUI() {
         system("open ~/Library/Caches");
     }
     if (ImGui::Button("Open Crystal Folder")) {
-        system(conf.c_str());
+        system(conf.string().c_str());
     }
     if (ImGui::Button("Open Resources Folder")) {
         system("open Resources");
@@ -732,6 +732,7 @@ $execute {
     }, geode::DispatchFilter<bool*>("ninxout.crystalclient/addPluginBool"));
 }
 
+#ifdef GEODE_IS_MACOS
 class $modify(CCDirector) {
     void drawScene() {
         CrystalClient::get()->setup();
@@ -741,6 +742,16 @@ class $modify(CCDirector) {
         CrystalClient::get()->render();
     }
 };
+#elif defined(GEODE_IS_WINDOWS)
+#include <Geode/modify/CCEGLView.hpp>
+class $modify(CCEGLView) {
+	void swapBuffers() {
+		CrystalClient::get()->setup();
+		CrystalClient::get()->render();
+        CCEGLView::swapBuffers();
+    }
+};
+#endif
 
 class $modify(MenuLayer) {
 	bool init() {
@@ -760,8 +771,10 @@ class $modify(MenuLayer) {
 			ghc::filesystem::create_directory(betterBG);
 		}
 
-		std::string renderInit = "chmod +x " + std::string(Mod::get()->getResourcesDir() / "ffmpeg");
+#ifdef GEODE_IS_MACOS
+		std::string renderInit = "chmod +x " + (Mod::get()->getResourcesDir() / "ffmpeg").string();
 		system(renderInit.c_str());
+#endif
 		profile = Crystal::loadMods(this);
 
 		MenuLayer::init();
@@ -778,7 +791,7 @@ class $modify(MenuLayer) {
 		}
 
 		if (Crystal::profile.betterbg) {
-			image = geode::Mod::get()->getConfigDir().append("BetterBG").append("background.jpg");
+			image = geode::Mod::get()->getConfigDir().append("BetterBG").append("background.jpg").string();
 
 			if (ghc::filesystem::exists(image)) {
 				auto ml = GameManager::sharedState()->m_menuLayer;
@@ -1042,6 +1055,7 @@ class $modify(EditLevelLayer) {
     }
 };
 
+#ifdef GEODE_IS_MACOS
 class $modify(GJGameLevel) {
 	void savePercentage(int percentage, bool practice, int clicks, int attemptTime, bool vfDChk) {
 		if (profile.safeMode && !profile.autoSafeMode) return GJGameLevel::savePercentage(percentage, practice, clicks, attemptTime, false);
@@ -1050,6 +1064,7 @@ class $modify(GJGameLevel) {
 		else return GJGameLevel::savePercentage(percentage, practice, clicks, attemptTime, vfDChk);
 	}
 };
+#endif
 
 class $modify(GameManager) {
     bool isIconUnlocked(int a, IconType b) {
@@ -1181,11 +1196,13 @@ class $modify(GJBaseGameLayer) {
 			if (!b) P2pushes.push_back(currentFrame);
         }
         if (profile.clickBot) {
+#ifdef GEODE_IS_MACOS
             if (!Clickbot::inited) {
                 FMOD::System_Create(&Clickbot::system);
                 Clickbot::system->init(1024 * 2, FMOD_INIT_NORMAL, nullptr);
                 Clickbot::inited = true;
             }
+#endif
 
             Clickbot::now = std::chrono::system_clock::now();
             Clickbot::cycleTime = Clickbot::now - Clickbot::start;
@@ -1264,6 +1281,7 @@ class $modify(GJBaseGameLayer) {
 	}
 };
 
+#ifdef GEODE_IS_MACOS
 class $modify(HardStreak) {
 	void updateStroke(float f) {
 		if (Crystal::profile.nopulse) m_pulseSize = profile.trailsize;
@@ -1276,6 +1294,7 @@ class $modify(HardStreak) {
 		HardStreak::addPoint(point);
 	}
 };
+#endif
 
 class $modify(LevelInfoLayer) {
 	static LevelInfoLayer* create(GJGameLevel* g) {
@@ -1308,6 +1327,7 @@ class $modify(PauseLayer) {
 		if (Crystal::profile.levelEdit) {
 			auto editorSprite = CCSprite::createWithSpriteFrameName("GJ_editBtn_001.png");
 			auto menu = static_cast<CCMenu*>(pause->getChildByID("center-button-menu"));
+#ifdef GEODE_IS_MACOS
 			auto editorButton = CCMenuItemSpriteExtra::create(editorSprite, pause, menu_selector(PauseLayer::goEdit));
 
 			if (menu->getChildrenCount() != 5) {
@@ -1319,6 +1339,7 @@ class $modify(PauseLayer) {
 				menu->addChild(editorButton);
 				menu->updateLayout();
 			}
+#endif
 		}
 		return pause;
 	}
@@ -1647,12 +1668,14 @@ class $modify(Main, PlayLayer) {
 	}
 
     void fullReset() {
+#ifdef GEODE_IS_MACOS
 		if (Crystal::profile.lastCheckpoint && m_isPracticeMode) {
 			loadLastCheckpoint();
 			resetLevel();
 		} else {
 			PlayLayer::fullReset();
 		}
+#endif
 	}
 
     void checkCollisions(PlayerObject* p, float g) {
@@ -1711,6 +1734,7 @@ class $modify(Main, PlayLayer) {
 		}
 	}
 
+#ifdef GEODE_IS_MACOS
     CGImageRef CGImageFromCCImage(CCImage* img) {
 		float width = img->getWidth();
 		float height = img->getHeight();
@@ -1789,8 +1813,10 @@ class $modify(Main, PlayLayer) {
 		auto img = renderer->newCCImage(true);
 		CGImageWriteToFile(CGImageFromCCImage(img));    
 	}
+#endif
 
 	void Press(int key) {
+#ifdef GEODE_IS_MACOS
 		// Create an HID hardware event source
 		CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 
@@ -1800,9 +1826,11 @@ class $modify(Main, PlayLayer) {
 		// Post keyboard event and release
 		CGEventPost (kCGHIDEventTap, evt);
 		CFRelease (evt); CFRelease (src);
+#endif
 	}
 
 	void Release(int key) {
+#ifdef GEODE_IS_MACOS
 		// Create an HID hardware event source
 		CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 
@@ -1812,6 +1840,7 @@ class $modify(Main, PlayLayer) {
 		// Post keyboard event and release
 		CGEventPost (kCGHIDEventTap, evt);
 		CFRelease (evt); CFRelease (src);
+#endif
 	}
 
     void update(float f4) {
@@ -1931,12 +1960,13 @@ class $modify(Main, PlayLayer) {
         }
     }
 
+#ifdef GEODE_IS_MACOS
 		CGEventRef ourEvent = CGEventCreate(NULL);
 		auto point = CGEventGetLocation(ourEvent);
 		CFRelease(ourEvent);
 
 		if (!CrystalClient::get()->isRendering && Crystal::profile.lockCursor && !m_hasCompletedLevel) CGWarpMouseCursorPosition(point);
-
+#endif
 		frames += f4;
 		fixa += f4;
 		timee += f4;
@@ -2242,10 +2272,12 @@ class $modify(Main, PlayLayer) {
 				PlayLayer::update(time);
 			}
 			//PlayLayer::update(f4);
+#ifdef GEODE_IS_MACOS
 			if (profile.renderer && lastTime != (int)(m_time * 60)) {
 				captureScreen();
 				lastTime = (int)(m_time * 60);
 			}
+#endif
 		}
 
 		if (profile.trajectory) drawer->processMainTrajectory(f4);
@@ -2354,6 +2386,7 @@ class $modify(Main, PlayLayer) {
 	}
 
 	std::string exec(std::string command) {
+#ifdef GEODE_IS_MACOS
 		char buffer[128];
 		std::string result = "";
 
@@ -2373,13 +2406,16 @@ class $modify(Main, PlayLayer) {
 
 		pclose(pipe);
 		return result;
+#endif
+		return "i dont care";
 	}
 
     void onQuit() {
 		if (profile.trajectory) drawer->onQuitTrajectory();
+#ifdef GEODE_IS_MACOS
 		std::string renderprocess;
 		//FPSOverlay::sharedState()->removeFromParentAndCleanup(false);
-		std::string basicNAME = (std::string)renderer + "/new.mp4";
+		std::string basicNAME = renderer.string() + "/new.mp4";
 		if (profile.renderer) {
 			std::stringstream rendercmd;
 			rendercmd << "cd \"" + std::string(Mod::get()->getResourcesDir()) + "\" && ./ffmpeg -framerate 60 -y -i \"" + (std::string)framesFol + "/frame_%4d.png\"";
@@ -2389,6 +2425,7 @@ class $modify(Main, PlayLayer) {
 			auto renderprocess = system(fullcmd.c_str());
 			//renderprocess = exec(rendercmd);
 		}
+#endif
 		coins.clear();
 		if (!shouldQuit && Crystal::profile.confirmQuit && !m_hasLevelCompleteMenu) {
 			geode::createQuickPopup(
@@ -2427,10 +2464,12 @@ class $modify(Main, PlayLayer) {
 		}
 	}
 
+#ifdef GEODE_IS_MACOS
 	void startGame() {
 		PlayLayer::startGame();
 		gameStarted = true;
 	}
+#endif
 
     static inline tulip::HitboxNode* drawer;
 
@@ -2463,7 +2502,7 @@ class $modify(Main, PlayLayer) {
 		if (!ghc::filesystem::exists(framesFol)) {
 			ghc::filesystem::create_directories(framesFol);
 		} else {
-			ghc::filesystem::remove_all(framesFol);
+			// ghc::filesystem::remove_all(framesFol);
 			ghc::filesystem::create_directory(framesFol);
 		}
 
@@ -2515,6 +2554,7 @@ class $modify(Main, PlayLayer) {
 			g_startPosText->setScale(0.5);
 			g_startPosText->setOpacity(50);
 
+#ifdef GEODE_IS_MACOS
 			rightButton->::Main::setPosition(win_size.width / 2 - 30, corner - 275);
 			rightButton->setScale(0.5);
 			rightButton->setOpacity(50);
@@ -2523,6 +2563,7 @@ class $modify(Main, PlayLayer) {
 			leftButton->setFlipX(true);
 			leftButton->setScale(0.5);
 			leftButton->setOpacity(50);
+#endif
 
 			if (!m_isTestMode) {
 				g_startPosText->setVisible(false);
@@ -2616,6 +2657,7 @@ class $modify(LeaderboardsLayer) {
     }
 };
 
+#ifdef GEODE_IS_MACOS
 class $modify(LocalLevelManager) {
 	bool init() {
 		LocalLevelManager::init();
@@ -2625,6 +2667,7 @@ class $modify(LocalLevelManager) {
         return true;
     }
 };
+#endif
 
 class $modify(ModifiedSearchLayer, LevelSearchLayer) {
 	virtual bool init() {
@@ -2733,7 +2776,7 @@ class $(GameLevelManager) {
 			}
 		}
 
-		GameLevelManager::ProcessHttpRequest(url, query, idk, type);
+		GameLevelManager::ProcessHttpRequest(url, query, idk, (GJHttpType)type);
 	}
 };
 
@@ -2988,6 +3031,7 @@ CrystalProfile Crystal::loadMods(CCNode* layer) {
 
 			for (auto& [key, value] : json.items()) {
 				if (!value.is_null()) { // just in case
+				#ifdef GEODE_IS_MACOS
 					return CrystalProfile {
 						.message = json["message"],
 						.tclicks = json["tclicks"],
@@ -3101,6 +3145,7 @@ CrystalProfile Crystal::loadMods(CCNode* layer) {
 						.displayOpacity = json["opacities"],
 						.displayScale = json["scales"],
 					};
+					#endif
 				}
 			}
 		} else {

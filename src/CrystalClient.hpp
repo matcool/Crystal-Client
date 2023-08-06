@@ -4,7 +4,6 @@
 #include <cocos2d.h>
 #include <Geode/utils/cocos.hpp>
 #include <unordered_map>
-#include <dispatch/dispatch.h>
 
 using namespace geode::prelude;
 
@@ -42,7 +41,6 @@ public:
 
     static std::string getRenderPath(bool full);
     static cocos2d::enumKeyCodes shortcutKey(int key);
-    float getTimeForXPos(PlayLayer*);
     void arrangeText(int arrayLength, PlayLayer* menulay, bool first);
     void setAnchoredPosition(CCLabelBMFont* label, int anchorPos, CCLayer* layer, bool first);
     void HSVtoRGB(float& fR, float& fG, float& fB, float& fH, float& fS, float& fV);
